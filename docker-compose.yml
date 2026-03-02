@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: booking_app
+    volumes:
+      - ./src:/var/www
+    depends_on:
+      - mysql
+    networks:
+      - booking_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: booking_nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./src:/var/www
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - booking_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: booking_mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: booking
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: booking
+      MYSQL_PASSWORD: booking
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - booking_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: booking_phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: booking
+      PMA_PASSWORD: booking
+    depends_on:
+      - mysql
+    networks:
+      - booking_network
+
+volumes:
+  mysql_data:
+
+networks:
+  booking_network:
+    driver: bridge
