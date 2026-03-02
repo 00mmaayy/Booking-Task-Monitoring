@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900" x-data="{ isNoteModalOpen: false, selectedFormId: '', selectedFormName: '', noteDate: '', notesRemarks: '', openNoteModal(button) { this.selectedFormId = button.dataset.formId; this.selectedFormName = button.dataset.formName; this.noteDate = button.dataset.noteDate || '{{ now()->format('Y-m-d') }}'; this.notesRemarks = button.dataset.notesRemarks || ''; this.isNoteModalOpen = true; }, closeNoteModal() { this.isNoteModalOpen = false; } }">
+                <div class="p-6 text-gray-900" x-data="{ isNoteModalOpen: false, selectedFormId: '', selectedFormName: '', noteDate: '', noteStatus: 'pending', existingRemarks: '', notesRemarksInput: '', openNoteModal(button) { this.selectedFormId = button.dataset.formId; this.selectedFormName = button.dataset.formName; this.noteDate = button.dataset.noteDate || '{{ now()->format('Y-m-d') }}'; this.noteStatus = button.dataset.noteStatus || 'pending'; this.existingRemarks = button.dataset.notesRemarks || ''; this.notesRemarksInput = ''; this.isNoteModalOpen = true; }, closeNoteModal() { this.isNoteModalOpen = false; } }">
                     @if (session('status') === 'form-note-saved')
                         <p class="mb-4 text-sm text-green-600">{{ __('Form note saved successfully.') }}</p>
                     @endif
@@ -51,9 +51,9 @@
                         <div>
                             <x-input-label for="assigned_responsible_person" :value="__('Assigned Responsible Person')" />
                             <select id="assigned_responsible_person" name="assigned_responsible_person" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" disabled>
-                                <option value="">{{ __('Select User') }}</option>
-                                @foreach ($users as $user)
-                                    <option value="{{ $user->id }}" @selected((string) old('assigned_responsible_person', $monitoring->assigned_responsible_person_id) === (string) $user->id)>{{ $user->name }}</option>
+                                <option value="">{{ __('Select Contact Person') }}</option>
+                                @foreach ($contactPersons as $contactPerson)
+                                    <option value="{{ $contactPerson->id }}" @selected((string) old('assigned_responsible_person', $monitoring->assigned_responsible_person_id) === (string) $contactPerson->id)>{{ $contactPerson->contact_person }}</option>
                                 @endforeach
                             </select>
                             <input type="hidden" name="assigned_responsible_person" value="{{ old('assigned_responsible_person', $monitoring->assigned_responsible_person_id) }}">
@@ -64,6 +64,10 @@
                             <x-input-label for="required_forms_documents" :value="__('List of Required Forms and Documents')" />
                             @php
                                 $selectedFormIds = array_map('strval', old('required_forms_documents', $monitoring->required_forms_documents ?? []));
+                                $allRequiredFormsCompleted = ! empty($selectedFormIds)
+                                    && collect($selectedFormIds)->every(function (string $formId) use ($notesByForm): bool {
+                                        return strtolower((string) ($notesByForm[(int) $formId]['note_status'] ?? 'pending')) === 'completed';
+                                    });
                             @endphp
 
                             <div id="required_forms_documents" class="mt-1 overflow-x-auto rounded-md border border-gray-300">
@@ -71,6 +75,8 @@
                                     <thead class="bg-gray-50">
                                         <tr>
                                             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Form Name') }}</th>
+                                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Status') }}</th>
+                                            <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Notes/Remarks') }}</th>
                                             <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Action') }}</th>
                                         </tr>
                                     </thead>
@@ -78,11 +84,15 @@
                                         @forelse ($forms->filter(fn ($form) => in_array((string) $form->id, $selectedFormIds, true)) as $form)
                                             @php
                                                 $note = $notesByForm[$form->id] ?? null;
+                                                $noteStatus = strtolower($note['note_status'] ?? 'pending');
+                                                $isCompleted = $noteStatus === 'completed';
                                             @endphp
                                             <tr>
                                                 <td class="px-4 py-2 text-sm text-gray-900">{{ $form->form_name }}</td>
+                                                <td class="px-4 py-2 text-sm text-gray-900">{{ strtoupper($noteStatus) }}</td>
+                                                <td class="px-4 py-2 text-sm text-gray-900 whitespace-pre-line">{{ $note['notes_remarks'] ?? '—' }}</td>
                                                 <td class="px-4 py-2 text-sm text-gray-900">
-                                                    <button type="button" x-on:click="openNoteModal($el)" data-form-id="{{ $form->id }}" data-form-name="{{ $form->form_name }}" data-note-date="{{ $note['note_date'] ?? '' }}" data-notes-remarks="{{ $note['notes_remarks'] ?? '' }}" class="inline-flex items-center rounded-md bg-gray-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                                    <button type="button" x-on:click="openNoteModal($el)" data-form-id="{{ $form->id }}" data-form-name="{{ $form->form_name }}" data-note-date="{{ $note['note_date'] ?? '' }}" data-note-status="{{ $note['note_status'] ?? 'pending' }}" data-notes-remarks="{{ $note['notes_remarks'] ?? '' }}" class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $isCompleted ? 'bg-green-600 hover:bg-green-500 focus:ring-green-500' : 'bg-gray-800 hover:bg-gray-700 focus:ring-gray-500' }}">
                                                         {{ __('Update') }}
                                                     </button>
                                                 </td>
@@ -90,7 +100,7 @@
                                             <input type="hidden" name="required_forms_documents[]" value="{{ $form->id }}">
                                         @empty
                                             <tr>
-                                                <td colspan="2" class="px-4 py-2 text-sm text-gray-500 text-center">{{ __('No required forms selected.') }}</td>
+                                                <td colspan="4" class="px-4 py-2 text-sm text-gray-500 text-center">{{ __('No required forms selected.') }}</td>
                                             </tr>
                                         @endforelse
                                     </tbody>
@@ -100,7 +110,11 @@
                         </div>
 
                         <div class="md:col-span-2 flex items-center gap-4">
-                            <x-primary-button>{{ __('Update') }}</x-primary-button>
+                            @if ($allRequiredFormsCompleted)
+                                <button type="submit" class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                    {{ __('Documents Completed') }}
+                                </button>
+                            @endif
                             <a href="{{ route('bookings.index', ['tab' => 'monitoring']) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back to Monitoring') }}</a>
                         </div>
                     </form>
@@ -119,6 +133,7 @@
                             <form method="POST" action="{{ route('bookings.form-note.save', $monitoring) }}" class="mt-6 space-y-6" data-confirm="Are you sure you want to save this form note?">
                                 @csrf
                                 <input type="hidden" name="form_id" x-model="selectedFormId">
+                                <input type="hidden" name="existing_notes_remarks" x-model="existingRemarks">
 
                                 <div>
                                     <x-input-label for="note_date" :value="__('Note Date')" />
@@ -126,8 +141,21 @@
                                 </div>
 
                                 <div>
-                                    <x-input-label for="notes_remarks" :value="__('Notes/Remarks')" />
-                                    <textarea id="notes_remarks" name="notes_remarks" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" x-model="notesRemarks"></textarea>
+                                    <x-input-label for="note_status" :value="__('Status')" />
+                                    <select id="note_status" name="note_status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" x-model="noteStatus">
+                                        <option value="completed">{{ __('Completed') }}</option>
+                                        <option value="pending">{{ __('Pending') }}</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <x-input-label for="existing_notes_remarks_preview" :value="__('Existing Notes/Remarks')" />
+                                    <textarea id="existing_notes_remarks_preview" rows="4" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-gray-700 shadow-sm" x-model="existingRemarks" readonly></textarea>
+                                </div>
+
+                                <div>
+                                    <x-input-label for="notes_remarks_input" :value="__('Add Notes/Remarks')" />
+                                    <textarea id="notes_remarks_input" name="notes_remarks_input" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" x-model="notesRemarksInput"></textarea>
                                 </div>
 
                                 <div class="flex items-center justify-end gap-3">

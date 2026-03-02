@@ -17,6 +17,7 @@ class TaskMonitoringFormNote extends Model
         'form_id',
         'notes_remarks',
         'note_date',
+        'note_status',
     ];
 
     /**

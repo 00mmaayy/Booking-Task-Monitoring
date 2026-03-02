@@ -25,7 +25,7 @@
 
                         <div class="flex items-center gap-4">
                             <x-primary-button>{{ __('Save') }}</x-primary-button>
-                            <a href="{{ route('settings.index') }}#tasks-lists" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back to Settings') }}</a>
+                            <a href="{{ route('settings.index', ['tab' => 'tasks']) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back to Settings') }}</a>
                         </div>
                     </form>
                 </div>

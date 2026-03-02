@@ -44,6 +44,6 @@ class TaskMonitoring extends Model
 
     public function assignedResponsiblePerson(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_responsible_person_id');
+        return $this->belongsTo(Client::class, 'assigned_responsible_person_id');
     }
 }

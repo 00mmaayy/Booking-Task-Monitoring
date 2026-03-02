@@ -17,6 +17,7 @@ class ClientController extends Controller
     {
         $validated = $request->validate([
             'client_name' => ['required', 'string', 'max:255'],
+            'contact_person' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'tin' => ['required', 'string', 'max:255'],
             'tel_phone_number' => ['required', 'string', 'max:255'],
@@ -44,6 +45,7 @@ class ClientController extends Controller
     {
         $validated = $request->validate([
             'client_name' => ['required', 'string', 'max:255'],
+            'contact_person' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'tin' => ['required', 'string', 'max:255'],
             'tel_phone_number' => ['required', 'string', 'max:255'],

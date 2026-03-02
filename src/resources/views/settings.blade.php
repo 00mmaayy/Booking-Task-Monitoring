@@ -8,14 +8,14 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 space-y-6" x-data="{ activeMenu: window.location.hash === '#clients-lists' ? 'clients' : (window.location.hash === '#tasks-lists' ? 'tasks' : (window.location.hash === '#forms-lists' ? 'forms' : 'users')), showClientForm: @js($errors->has('client_name') || $errors->has('address') || $errors->has('tin') || $errors->has('tel_phone_number')), showTaskForm: @js($errors->has('task_name')), showFormEntry: @js($errors->has('form_name')) }">
+                <div class="p-6 text-gray-900 space-y-6" x-data="{ activeMenu: @js(in_array(request('tab'), ['users', 'clients', 'tasks', 'forms']) ? request('tab') : 'users'), showClientForm: @js($errors->has('client_name') || $errors->has('contact_person') || $errors->has('address') || $errors->has('tin') || $errors->has('tel_phone_number')), showTaskForm: @js($errors->has('task_name')), showFormEntry: @js($errors->has('form_name')) }">
                     <div>
                         <div class="border border-gray-200 rounded-lg p-4">
                             <div class="flex flex-wrap items-center gap-6 text-sm">
-                                <a href="#" x-on:click.prevent="activeMenu = 'users'" class="text-indigo-600 hover:text-indigo-800 font-medium">{{ __('User Settings') }}</a>
-                                <a href="#clients-lists" x-on:click.prevent="activeMenu = 'clients'" class="text-indigo-600 hover:text-indigo-800 font-medium">{{ __('Clients List') }}</a>
-                                <a href="#tasks-lists" x-on:click.prevent="activeMenu = 'tasks'" class="text-indigo-600 hover:text-indigo-800 font-medium">{{ __('Tasks List') }}</a>
-                                <a href="#forms-lists" x-on:click.prevent="activeMenu = 'forms'" class="text-indigo-600 hover:text-indigo-800 font-medium">{{ __('Forms List') }}</a>
+                                <a href="{{ route('settings.index', ['tab' => 'users']) }}" class="text-indigo-600 hover:text-indigo-800 font-medium">{{ __('User Settings') }}</a>
+                                <a href="{{ route('settings.index', ['tab' => 'clients']) }}" class="text-indigo-600 hover:text-indigo-800 font-medium">{{ __('Clients List') }}</a>
+                                <a href="{{ route('settings.index', ['tab' => 'tasks']) }}" class="text-indigo-600 hover:text-indigo-800 font-medium">{{ __('Tasks List') }}</a>
+                                <a href="{{ route('settings.index', ['tab' => 'forms']) }}" class="text-indigo-600 hover:text-indigo-800 font-medium">{{ __('Forms List') }}</a>
                             </div>
                         </div>
                     </div>
@@ -81,7 +81,7 @@
                         </div>
 
                         <div class="mt-4">
-                            {{ $users->appends(['clients_page' => request('clients_page'), 'tasks_page' => request('tasks_page'), 'forms_page' => request('forms_page')])->links() }}
+                            {{ $users->appends(['tab' => 'users', 'clients_page' => request('clients_page'), 'tasks_page' => request('tasks_page'), 'forms_page' => request('forms_page')])->links() }}
                         </div>
                     </div>
 
@@ -114,6 +114,12 @@
                                 </div>
 
                                 <div>
+                                    <x-input-label for="contact_person" :value="__('Contact Person')" />
+                                    <x-text-input id="contact_person" name="contact_person" type="text" class="mt-1 block w-full" :value="old('contact_person')" required />
+                                    <x-input-error class="mt-2" :messages="$errors->get('contact_person')" />
+                                </div>
+
+                                <div>
                                     <x-input-label for="tin" :value="__('TIN')" />
                                     <x-text-input id="tin" name="tin" type="text" class="mt-1 block w-full" :value="old('tin')" required />
                                     <x-input-error class="mt-2" :messages="$errors->get('tin')" />
@@ -141,6 +147,7 @@
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('ID') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Client Name') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Address') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Contact Person') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('TIN') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Tel/Phone Number') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Action') }}</th>
@@ -152,6 +159,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $client->id }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $client->client_name }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $client->address }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $client->contact_person }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $client->tin }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $client->tel_phone_number }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -162,7 +170,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="px-6 py-4 text-sm text-gray-500 text-center">{{ __('No clients found.') }}</td>
+                                            <td colspan="7" class="px-6 py-4 text-sm text-gray-500 text-center">{{ __('No clients found.') }}</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -170,7 +178,7 @@
                         </div>
 
                         <div class="mt-4">
-                            {{ $clients->appends(['users_page' => request('users_page'), 'tasks_page' => request('tasks_page'), 'forms_page' => request('forms_page')])->links() }}
+                            {{ $clients->appends(['tab' => 'clients', 'users_page' => request('users_page'), 'tasks_page' => request('tasks_page'), 'forms_page' => request('forms_page')])->links() }}
                         </div>
                     </div>
 
@@ -234,7 +242,7 @@
                         </div>
 
                         <div class="mt-4">
-                            {{ $tasks->appends(['users_page' => request('users_page'), 'clients_page' => request('clients_page'), 'forms_page' => request('forms_page')])->links() }}
+                            {{ $tasks->appends(['tab' => 'tasks', 'users_page' => request('users_page'), 'clients_page' => request('clients_page'), 'forms_page' => request('forms_page')])->links() }}
                         </div>
                     </div>
 
@@ -298,7 +306,7 @@
                         </div>
 
                         <div class="mt-4">
-                            {{ $forms->appends(['users_page' => request('users_page'), 'clients_page' => request('clients_page'), 'tasks_page' => request('tasks_page')])->links() }}
+                            {{ $forms->appends(['tab' => 'forms', 'users_page' => request('users_page'), 'clients_page' => request('clients_page'), 'tasks_page' => request('tasks_page')])->links() }}
                         </div>
                     </div>
                 </div>

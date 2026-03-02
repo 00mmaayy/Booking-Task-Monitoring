@@ -31,7 +31,7 @@
                     <div class="border border-gray-200 rounded-lg p-6" x-show="activeMenu === 'entry'" x-data="{ selectedForms: [], initializeSelectedForms() { const checked = this.$root.querySelectorAll(`input[name='required_forms_documents[]']:checked`); this.selectedForms = Array.from(checked).map((item) => ({ value: item.value, text: item.dataset.formName })); }, toggleForm(event) { const value = event.target.value; const text = event.target.dataset.formName; if (event.target.checked) { if (!this.selectedForms.find((item) => item.value === value)) { this.selectedForms.push({ value, text }); } return; } this.selectedForms = this.selectedForms.filter((item) => item.value !== value); }, removeSelectedForm(value) { const checkbox = this.$root.querySelector(`input[name='required_forms_documents[]'][value='${value}']`); if (checkbox) { checkbox.checked = false; } this.selectedForms = this.selectedForms.filter((item) => item.value !== value); } }" x-init="initializeSelectedForms()">
                         <h3 class="text-lg font-medium text-gray-900">{{ __('Job/Task Monitoring Form') }}</h3>
 
-                        <form method="POST" action="{{ route('bookings.store') }}" class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2" data-confirm="Are you sure you want to create this task?">
+                        <form method="POST" action="{{ route('bookings.store') }}" class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3" data-confirm="Are you sure you want to create this task?">
                             @csrf
 
                             <div>
@@ -62,18 +62,7 @@
                                 <x-input-error class="mt-2" :messages="$errors->get('type_of_task')" />
                             </div>
 
-                            <div>
-                                <x-input-label for="assigned_responsible_person" :value="__('Assigned Responsible Person')" />
-                                <select id="assigned_responsible_person" name="assigned_responsible_person" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                    <option value="">{{ __('Select User') }}</option>
-                                    @foreach ($users as $user)
-                                        <option value="{{ $user->id }}" @selected((string) old('assigned_responsible_person') === (string) $user->id)>{{ $user->name }}</option>
-                                    @endforeach
-                                </select>
-                                <x-input-error class="mt-2" :messages="$errors->get('assigned_responsible_person')" />
-                            </div>
-
-                            <div class="md:col-span-2">
+                            <div class="md:col-span-3">
                                 <x-input-label for="required_forms_documents" :value="__('List of Required Forms and Documents')" />
                                 <div id="required_forms_documents" class="mt-1 max-h-48 overflow-y-auto rounded-md border border-gray-300 p-3">
                                     <div class="space-y-2">
@@ -100,7 +89,7 @@
                                 </div>
                             </div>
 
-                            <div class="md:col-span-2">
+                            <div class="md:col-span-3">
                                 <x-primary-button>{{ __('Create Task') }}</x-primary-button>
                             </div>
                         </form>
@@ -127,29 +116,46 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->date_task_received?->format('F d, Y') }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->client?->client_name }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->task?->task_name }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->assignedResponsiblePerson?->name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->assignedResponsiblePerson?->contact_person }}</td>
                                             <td class="px-6 py-4 text-sm text-gray-900">
                                                 @php
-                                                    $requiredForms = collect($monitoring->required_forms_documents ?? [])
-                                                        ->map(fn ($id) => $formNamesById[(int) $id] ?? null)
-                                                        ->filter()
-                                                        ->values();
+                                                    $requiredFormIds = collect($monitoring->required_forms_documents ?? [])->map(fn ($id) => (int) $id)->values();
+                                                    $allRequiredFormsCompleted = $requiredFormIds->isNotEmpty()
+                                                        && $requiredFormIds->every(fn ($formId) => strtolower(trim((string) ($formStatusesByMonitoringAndForm[$monitoring->id.'-'.$formId] ?? 'pending'))) === 'completed');
                                                 @endphp
 
-                                                @if ($requiredForms->isEmpty())
+                                                @if ($requiredFormIds->isEmpty())
                                                     {{ '—' }}
                                                 @else
                                                     <div class="space-y-1">
-                                                        @foreach ($requiredForms as $formName)
-                                                            <div>{{ $formName }}</div>
+                                                        @foreach ($requiredFormIds as $formId)
+                                                            @php
+                                                                $formName = $formNamesById[$formId] ?? null;
+                                                                $formStatus = strtolower(trim((string) ($formStatusesByMonitoringAndForm[$monitoring->id.'-'.$formId] ?? 'pending')));
+                                                                $formStatusClass = $formStatus === 'completed'
+                                                                    ? 'text-green-600 font-semibold'
+                                                                    : 'text-red-600 font-semibold';
+                                                            @endphp
+
+                                                            @if ($formName)
+                                                                <div class="{{ $formStatusClass }}">{{ $formName }}</div>
+                                                            @endif
                                                         @endforeach
                                                     </div>
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <a href="{{ route('bookings.edit', $monitoring) }}" class="inline-flex items-center rounded-md bg-gray-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                                                    {{ __('Update') }}
-                                                </a>
+                                                <div class="flex flex-col items-start gap-2">
+                                                    @if ($allRequiredFormsCompleted)
+                                                        <button type="button" class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                            {{ __('Start Process') }}
+                                                        </button>
+                                                    @endif
+
+                                                    <a href="{{ route('bookings.edit', $monitoring) }}" class="inline-flex items-center rounded-md bg-gray-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                                        {{ $allRequiredFormsCompleted ? __('Review Task') : __('Update') }}
+                                                    </a>
+                                                </div>
                                             </td>
                                         </tr>
                                     @empty

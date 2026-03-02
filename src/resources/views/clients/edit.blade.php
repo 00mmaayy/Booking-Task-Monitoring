@@ -30,6 +30,12 @@
                         </div>
 
                         <div>
+                            <x-input-label for="contact_person" :value="__('Contact Person')" />
+                            <x-text-input id="contact_person" name="contact_person" type="text" class="mt-1 block w-full" :value="old('contact_person', $client->contact_person)" required />
+                            <x-input-error class="mt-2" :messages="$errors->get('contact_person')" />
+                        </div>
+
+                        <div>
                             <x-input-label for="tin" :value="__('TIN')" />
                             <x-text-input id="tin" name="tin" type="text" class="mt-1 block w-full" :value="old('tin', $client->tin)" required />
                             <x-input-error class="mt-2" :messages="$errors->get('tin')" />
@@ -43,7 +49,7 @@
 
                         <div class="flex items-center gap-4">
                             <x-primary-button>{{ __('Save') }}</x-primary-button>
-                            <a href="{{ route('settings.index') }}#clients-lists" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back to Settings') }}</a>
+                            <a href="{{ route('settings.index', ['tab' => 'clients']) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back to Settings') }}</a>
                         </div>
                     </form>
                 </div>

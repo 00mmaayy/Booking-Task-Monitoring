@@ -7,7 +7,6 @@ use App\Models\FormItem;
 use App\Models\Task;
 use App\Models\TaskMonitoring;
 use App\Models\TaskMonitoringFormNote;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -26,14 +25,16 @@ class BookingController extends Controller
             ->orderBy('client_name')
             ->get();
 
+        $contactPersons = Client::query()
+            ->select(['id', 'contact_person'])
+            ->whereNotNull('contact_person')
+            ->where('contact_person', '!=', '')
+            ->orderBy('contact_person')
+            ->get();
+
         $tasks = Task::query()
             ->select(['id', 'task_name'])
             ->orderBy('task_name')
-            ->get();
-
-        $users = User::query()
-            ->select(['id', 'name'])
-            ->orderBy('name')
             ->get();
 
         $forms = FormItem::query()
@@ -45,14 +46,21 @@ class BookingController extends Controller
             ->with([
                 'client:id,client_name',
                 'task:id,task_name',
-                'assignedResponsiblePerson:id,name',
+                'assignedResponsiblePerson:id,contact_person',
             ])
             ->latest('created_at')
             ->paginate(10, ['*'], 'monitorings_page');
 
         $formNamesById = $forms->pluck('form_name', 'id');
 
-        return view('bookings', compact('clients', 'tasks', 'users', 'forms', 'monitorings', 'formNamesById'));
+        $formStatusesByMonitoringAndForm = TaskMonitoringFormNote::query()
+            ->whereIn('task_monitoring_id', $monitorings->pluck('id'))
+            ->get()
+            ->mapWithKeys(fn (TaskMonitoringFormNote $note) => [
+                $note->task_monitoring_id.'-'.$note->form_id => strtolower((string) $note->note_status),
+            ]);
+
+        return view('bookings', compact('clients', 'contactPersons', 'tasks', 'forms', 'monitorings', 'formNamesById', 'formStatusesByMonitoringAndForm'));
     }
 
     /**
@@ -64,7 +72,6 @@ class BookingController extends Controller
             'date_task_received' => ['required', 'date'],
             'client_name' => ['required', 'integer', 'exists:clients,id'],
             'type_of_task' => ['required', 'integer', 'exists:tasks,id'],
-            'assigned_responsible_person' => ['required', 'integer', 'exists:users,id'],
             'required_forms_documents' => ['nullable', 'array'],
             'required_forms_documents.*' => ['integer', 'exists:forms,id'],
         ]);
@@ -73,7 +80,7 @@ class BookingController extends Controller
             'date_task_received' => $validated['date_task_received'],
             'client_id' => $validated['client_name'],
             'task_id' => $validated['type_of_task'],
-            'assigned_responsible_person_id' => $validated['assigned_responsible_person'],
+            'assigned_responsible_person_id' => $validated['client_name'],
             'required_forms_documents' => $validated['required_forms_documents'] ?? [],
         ]);
 
@@ -95,9 +102,11 @@ class BookingController extends Controller
             ->orderBy('task_name')
             ->get();
 
-        $users = User::query()
-            ->select(['id', 'name'])
-            ->orderBy('name')
+        $contactPersons = Client::query()
+            ->select(['id', 'contact_person'])
+            ->whereNotNull('contact_person')
+            ->where('contact_person', '!=', '')
+            ->orderBy('contact_person')
             ->get();
 
         $forms = FormItem::query()
@@ -112,9 +121,10 @@ class BookingController extends Controller
             ->map(fn (TaskMonitoringFormNote $note) => [
                 'notes_remarks' => $note->notes_remarks,
                 'note_date' => $note->note_date ? Carbon::parse($note->note_date)->format('Y-m-d') : null,
+                'note_status' => $note->note_status,
             ]);
 
-        return view('task-monitorings.edit', compact('monitoring', 'clients', 'tasks', 'users', 'forms', 'notesByForm'));
+        return view('task-monitorings.edit', compact('monitoring', 'clients', 'tasks', 'contactPersons', 'forms', 'notesByForm'));
     }
 
     /**
@@ -126,7 +136,7 @@ class BookingController extends Controller
             'date_task_received' => ['required', 'date'],
             'client_name' => ['required', 'integer', 'exists:clients,id'],
             'type_of_task' => ['required', 'integer', 'exists:tasks,id'],
-            'assigned_responsible_person' => ['required', 'integer', 'exists:users,id'],
+            'assigned_responsible_person' => ['required', 'integer', 'exists:clients,id'],
             'required_forms_documents' => ['nullable', 'array'],
             'required_forms_documents.*' => ['integer', 'exists:forms,id'],
         ]);
@@ -149,9 +159,24 @@ class BookingController extends Controller
     {
         $validated = $request->validate([
             'form_id' => ['required', 'integer', 'exists:forms,id'],
-            'notes_remarks' => ['nullable', 'string'],
+            'notes_remarks_input' => ['nullable', 'string'],
+            'existing_notes_remarks' => ['nullable', 'string'],
             'note_date' => ['nullable', 'date'],
+            'note_status' => ['required', 'string', 'in:completed,pending'],
         ]);
+
+        $existingRemarks = trim((string) ($validated['existing_notes_remarks'] ?? ''));
+        $newRemark = trim((string) ($validated['notes_remarks_input'] ?? ''));
+
+        $combinedRemarks = $existingRemarks;
+
+        if ($newRemark !== '') {
+            $timestampedRemark = '['.now()->format('F d, Y h:i A').'] '.$newRemark;
+
+            $combinedRemarks = $existingRemarks === ''
+                ? $timestampedRemark
+                : $existingRemarks."\n".$timestampedRemark;
+        }
 
         TaskMonitoringFormNote::updateOrCreate(
             [
@@ -159,8 +184,9 @@ class BookingController extends Controller
                 'form_id' => $validated['form_id'],
             ],
             [
-                'notes_remarks' => $validated['notes_remarks'] ?? null,
+                'notes_remarks' => $combinedRemarks !== '' ? $combinedRemarks : null,
                 'note_date' => $validated['note_date'] ?? null,
+                'note_status' => $validated['note_status'],
             ]
         );
 

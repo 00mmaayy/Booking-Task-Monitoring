@@ -34,7 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->paginate(10, ['*'], 'users_page');
 
         $clients = Client::query()
-            ->select(['id', 'client_name', 'address', 'tin', 'tel_phone_number', 'created_at'])
+            ->select(['id', 'client_name', 'contact_person', 'address', 'tin', 'tel_phone_number', 'created_at'])
             ->latest('created_at')
             ->paginate(10, ['*'], 'clients_page');
 
