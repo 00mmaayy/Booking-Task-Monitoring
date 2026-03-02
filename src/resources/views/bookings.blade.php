@@ -6,10 +6,10 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="w-full px-4 sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 space-y-6" x-data="{ activeMenu: '{{ request('tab') === 'monitoring' ? 'monitoring' : 'entry' }}' }">
-                    <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="max-w-7xl mx-auto border border-gray-200 rounded-lg p-4">
                         <div class="flex flex-wrap items-center gap-6 text-sm">
                             <a href="{{ route('bookings.index', ['tab' => 'entry']) }}" x-on:click.prevent="activeMenu = 'entry'" class="text-indigo-600 hover:text-indigo-800 font-medium">
                                 {{ __('Job/Task Entry') }}
@@ -28,8 +28,9 @@
                         <p class="text-sm text-green-600">{{ __('Task entry updated successfully.') }}</p>
                     @endif
 
-                    <div class="border border-gray-200 rounded-lg p-6" x-show="activeMenu === 'entry'" x-data="{ selectedForms: [], initializeSelectedForms() { const checked = this.$root.querySelectorAll(`input[name='required_forms_documents[]']:checked`); this.selectedForms = Array.from(checked).map((item) => ({ value: item.value, text: item.dataset.formName })); }, toggleForm(event) { const value = event.target.value; const text = event.target.dataset.formName; if (event.target.checked) { if (!this.selectedForms.find((item) => item.value === value)) { this.selectedForms.push({ value, text }); } return; } this.selectedForms = this.selectedForms.filter((item) => item.value !== value); }, removeSelectedForm(value) { const checkbox = this.$root.querySelector(`input[name='required_forms_documents[]'][value='${value}']`); if (checkbox) { checkbox.checked = false; } this.selectedForms = this.selectedForms.filter((item) => item.value !== value); } }" x-init="initializeSelectedForms()">
-                        <h3 class="text-lg font-medium text-gray-900">{{ __('Job/Task Monitoring Form') }}</h3>
+                    <div id="job-task-entry-section" class="max-w-7xl mx-auto" x-show="activeMenu === 'entry'">
+                        <div class="border border-gray-200 rounded-lg p-6" x-data="{ selectedForms: [], initializeSelectedForms() { const checked = this.$root.querySelectorAll(`input[name='required_forms_documents[]']:checked`); this.selectedForms = Array.from(checked).map((item) => ({ value: item.value, text: item.dataset.formName })); }, toggleForm(event) { const value = event.target.value; const text = event.target.dataset.formName; if (event.target.checked) { if (!this.selectedForms.find((item) => item.value === value)) { this.selectedForms.push({ value, text }); } return; } this.selectedForms = this.selectedForms.filter((item) => item.value !== value); }, removeSelectedForm(value) { const checkbox = this.$root.querySelector(`input[name='required_forms_documents[]'][value='${value}']`); if (checkbox) { checkbox.checked = false; } this.selectedForms = this.selectedForms.filter((item) => item.value !== value); } }" x-init="initializeSelectedForms()">
+                            <h3 class="text-lg font-medium text-gray-900">{{ __('Job/Task Monitoring Form') }}</h3>
 
                         <form method="POST" action="{{ route('bookings.store') }}" class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3" data-confirm="Are you sure you want to create this task?">
                             @csrf
@@ -92,27 +93,32 @@
                             <div class="md:col-span-3">
                                 <x-primary-button>{{ __('Create Task') }}</x-primary-button>
                             </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
 
-                    <div id="job-task-monitoring" class="border border-gray-200 rounded-lg p-6" x-show="activeMenu === 'monitoring'">
-                        <h3 class="text-lg font-medium text-gray-900">{{ __('Job/Task Monitoring') }}</h3>
+                    <div id="job-task-monitoring-section" x-show="activeMenu === 'monitoring'">
+                        <div id="job-task-monitoring" class="border border-gray-200 rounded-lg p-6">
+                            <h3 class="text-lg font-medium text-gray-900">{{ __('Job/Task Monitoring') }}</h3>
 
                         <div class="mt-6 overflow-x-auto border border-gray-200 rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Task ID') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Date Task Received') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Client Name') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Type of Task') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Assigned Responsible Person') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('List of Required Forms and Documents') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Submission Status') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Action') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @forelse ($monitorings as $monitoring)
                                         <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->id }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->date_task_received?->format('F d, Y') }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->client?->client_name }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->task?->task_name }}</td>
@@ -145,6 +151,19 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                @php
+                                                    $submissionStatus = strtolower((string) ($monitoring->submission_status ?? 'pending'));
+                                                @endphp
+
+                                                @if ($submissionStatus === 'completed')
+                                                    <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">{{ __('Completed') }}</span>
+                                                @elseif ($submissionStatus === 'pending')
+                                                    <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">{{ __('Pending') }}</span>
+                                                @else
+                                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{{ ucfirst($submissionStatus) }}</span>
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 <div class="flex flex-col items-start gap-2">
                                                     @if ($allRequiredFormsCompleted)
                                                         <button type="button" class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
@@ -160,15 +179,16 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="6" class="px-6 py-4 text-sm text-gray-500 text-center">{{ __('No monitoring records found.') }}</td>
+                                            <td colspan="8" class="px-6 py-4 text-sm text-gray-500 text-center">{{ __('No monitoring records found.') }}</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div>
 
-                        <div class="mt-4">
-                            {{ $monitorings->links() }}
+                            <div class="mt-4">
+                                {{ $monitorings->links() }}
+                            </div>
                         </div>
                     </div>
                 </div>

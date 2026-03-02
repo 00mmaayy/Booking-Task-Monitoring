@@ -19,6 +19,7 @@ class TaskMonitoring extends Model
         'task_id',
         'assigned_responsible_person_id',
         'required_forms_documents',
+        'submission_status',
     ];
 
     /**

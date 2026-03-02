@@ -82,6 +82,7 @@ class BookingController extends Controller
             'task_id' => $validated['type_of_task'],
             'assigned_responsible_person_id' => $validated['client_name'],
             'required_forms_documents' => $validated['required_forms_documents'] ?? [],
+            'submission_status' => 'pending',
         ]);
 
         return Redirect::route('bookings.index')->with('status', 'task-created');
