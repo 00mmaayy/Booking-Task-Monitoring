@@ -110,9 +110,11 @@
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Client Name') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Type of Task') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Assigned Responsible Person') }}</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('List of Required Forms and Documents') }}</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Required Docs Status') }}</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Submission Status') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200 border-r-0">{{ __('List of Required Forms and Documents') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200 border-l-0">{{ __('Required Docs Status') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200 border-r-0">{{ __('Submission Details') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200 border-l-0">{{ __('Submission Status') }}</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Release of Cert/Clearance') }}</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Action') }}</th>
                                     </tr>
                                 </thead>
@@ -124,7 +126,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->client?->client_name }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->task?->task_name }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $monitoring->assignedResponsiblePerson?->contact_person }}</td>
-                                            <td class="px-6 py-4 text-sm text-gray-900">
+                                            <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200 border-r-0">
                                                 @php
                                                     $requiredFormIds = collect($monitoring->required_forms_documents ?? [])->map(fn ($id) => (int) $id)->values();
                                                     $allRequiredFormsCompleted = $requiredFormIds->isNotEmpty()
@@ -151,7 +153,7 @@
                                                     </div>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 border-l-0">
                                                 @if ($requiredFormIds->isEmpty())
                                                     <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{{ __('N/A') }}</span>
                                                 @elseif ($allRequiredFormsCompleted)
@@ -162,11 +164,32 @@
 
                                                 @if (!empty($latestFormNoteUpdatedAtByMonitoring[$monitoring->id] ?? null))
                                                     <div class="mt-1 text-xs text-gray-500">
-                                                        {{ __('Last updated:') }} {{ $latestFormNoteUpdatedAtByMonitoring[$monitoring->id] }}
+                                                        <div>{{ __('Last updated:') }}</div>
+                                                        <div>{{ $latestFormNoteUpdatedAtByMonitoring[$monitoring->id] }}</div>
                                                     </div>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td class="px-6 py-4 text-sm text-gray-900 border border-gray-200 border-r-0">
+                                                @if ($allRequiredFormsCompleted)
+                                                    <div class="space-y-2">
+                                                        <div>
+                                                            <div class="text-xs font-medium text-gray-500">{{ __('Date of Submission') }}</div>
+                                                            <div>{{ $monitoring->date_of_submission?->format('F d, Y') ?? '—' }}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div class="text-xs font-medium text-gray-500">{{ __('Recieving Officer') }}</div>
+                                                            <div>{{ $monitoring->receiving_officer ?? '—' }}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div class="text-xs font-medium text-gray-500">{{ __('Acknowledgement Reciept/Reference Number') }}</div>
+                                                            <div>{{ $monitoring->acknowledgement_receipt_reference_number ?? '—' }}</div>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    {{ '—' }}
+                                                @endif
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border border-gray-200 border-l-0">
                                                 @php
                                                     $submissionStatus = strtolower((string) ($monitoring->submission_status ?? 'pending'));
                                                 @endphp
@@ -179,11 +202,12 @@
                                                     <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{{ ucfirst($submissionStatus) }}</span>
                                                 @endif
                                             </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ '—' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 <div class="flex flex-col items-start gap-2">
                                                     @if ($allRequiredFormsCompleted)
                                                         <a href="{{ route('bookings.edit', ['monitoring' => $monitoring, 'show_submission_form' => 1]) }}" class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                            {{ __('Start Submission Process') }}
+                                                            {{ __('Submission Process') }}
                                                         </a>
                                                     @endif
 
@@ -197,7 +221,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="9" class="px-6 py-4 text-sm text-gray-500 text-center">{{ __('No monitoring records found.') }}</td>
+                                            <td colspan="11" class="px-6 py-4 text-sm text-gray-500 text-center">{{ __('No monitoring records found.') }}</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

@@ -10,6 +10,15 @@ class TaskMonitoring extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::saving(function (TaskMonitoring $taskMonitoring): void {
+            if (strtolower(trim((string) $taskMonitoring->submission_decision)) === 'accepted') {
+                $taskMonitoring->submission_status = 'completed';
+            }
+        });
+    }
+
     /**
      * @var list<string>
      */
@@ -23,6 +32,8 @@ class TaskMonitoring extends Model
         'date_of_submission',
         'receiving_officer',
         'acknowledgement_receipt_reference_number',
+        'submission_decision',
+        'submission_notes',
     ];
 
     /**

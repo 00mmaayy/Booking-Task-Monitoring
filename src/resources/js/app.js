@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	modalRoot.id = 'global-confirm-modal';
 	modalRoot.className = 'fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/50 p-4';
 	modalRoot.innerHTML = `
-		<div class="w-full max-w-xs rounded-md bg-white p-4 shadow-xl">
+		<div class="w-full max-w-[18rem] rounded-md bg-white p-3 shadow-xl">
 			<h3 class="text-lg font-semibold text-gray-900">Confirm Submission</h3>
 			<p id="global-confirm-message" class="mt-2 text-sm text-gray-600"></p>
 			<div class="mt-4 flex justify-end gap-2">

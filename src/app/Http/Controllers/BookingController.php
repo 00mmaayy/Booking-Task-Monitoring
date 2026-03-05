@@ -161,11 +161,9 @@ class BookingController extends Controller
             'date_of_submission' => ['nullable', 'date'],
             'receiving_officer' => ['nullable', 'string', 'max:255'],
             'acknowledgement_receipt_reference_number' => ['nullable', 'string', 'max:255'],
+            'submission_decision' => ['nullable', 'string', 'in:declined,accepted'],
+            'submission_notes' => ['nullable', 'string'],
         ]);
-
-        $hasCompleteSubmissionDetails = ! empty($validated['date_of_submission'])
-            && ! empty(trim((string) ($validated['receiving_officer'] ?? '')))
-            && ! empty(trim((string) ($validated['acknowledgement_receipt_reference_number'] ?? '')));
 
         $monitoring->update([
             'date_task_received' => $validated['date_task_received'],
@@ -176,10 +174,14 @@ class BookingController extends Controller
             'date_of_submission' => $validated['date_of_submission'] ?? null,
             'receiving_officer' => $validated['receiving_officer'] ?? null,
             'acknowledgement_receipt_reference_number' => $validated['acknowledgement_receipt_reference_number'] ?? null,
-            'submission_status' => $hasCompleteSubmissionDetails ? 'completed' : 'pending',
+            'submission_decision' => $validated['submission_decision'] ?? null,
+            'submission_notes' => $validated['submission_notes'] ?? null,
+            'submission_status' => ($validated['submission_decision'] ?? null) === 'accepted' ? 'completed' : 'pending',
         ]);
 
-        return Redirect::route('bookings.index', ['tab' => 'monitoring'])->with('status', 'task-updated');
+        return Redirect::route('bookings.edit', ['monitoring' => $monitoring, 'show_submission_form' => 1])
+            ->withFragment('submission-action')
+            ->with('status', 'task-updated');
     }
 
     /**
