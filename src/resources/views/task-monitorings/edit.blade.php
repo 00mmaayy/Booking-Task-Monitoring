@@ -89,7 +89,18 @@
                                             @endphp
                                             <tr>
                                                 <td class="px-4 py-2 text-sm text-gray-900">{{ $form->form_name }}</td>
-                                                <td class="px-4 py-2 text-sm text-gray-900">{{ strtoupper($noteStatus) }}</td>
+                                                <td class="px-4 py-2 text-sm text-gray-900">
+                                                    @if ($noteStatus === 'completed')
+                                                        <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">{{ __('Completed') }}</span>
+                                                    @elseif ($noteStatus === 'pending')
+                                                        <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">{{ __('Pending') }}</span>
+                                                    @else
+                                                        <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">{{ ucfirst($noteStatus) }}</span>
+                                                    @endif
+                                                    @if (!empty($note['updated_at'] ?? null))
+                                                        <div class="mt-1 text-xs text-gray-500">{{ __('Last updated:') }} {{ $note['updated_at'] }}</div>
+                                                    @endif
+                                                </td>
                                                 <td class="px-4 py-2 text-sm text-gray-900 whitespace-pre-line">{{ $note['notes_remarks'] ?? '—' }}</td>
                                                 <td class="px-4 py-2 text-sm text-gray-900">
                                                     <button type="button" x-on:click="openNoteModal($el)" data-form-id="{{ $form->id }}" data-form-name="{{ $form->form_name }}" data-note-date="{{ $note['note_date'] ?? '' }}" data-note-status="{{ $note['note_status'] ?? 'pending' }}" data-notes-remarks="{{ $note['notes_remarks'] ?? '' }}" class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $isCompleted ? 'bg-green-600 hover:bg-green-500 focus:ring-green-500' : 'bg-gray-800 hover:bg-gray-700 focus:ring-gray-500' }}">
@@ -109,8 +120,47 @@
                             <x-input-error class="mt-2" :messages="$errors->get('required_forms_documents')" />
                         </div>
 
-                        <div class="md:col-span-2 flex items-center gap-4">
-                            <a href="{{ route('bookings.index', ['tab' => 'monitoring']) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back to Monitoring') }}</a>
+                        <div class="md:col-span-2">
+                            @if ($allRequiredFormsCompleted)
+                                <div class="w-full">
+                                    <x-input-label :value="__('Submission Details')" />
+                                    <div class="mt-1 overflow-x-auto rounded-md border border-gray-300">
+                                        <table class="min-w-full divide-y divide-gray-200">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Date of Submission') }}</th>
+                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Recieving Officer') }}</th>
+                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Acknowledgement Reciept/Reference Number') }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="bg-white">
+                                                <tr>
+                                                    <td class="px-4 py-3 align-top text-sm text-gray-900">
+                                                        <x-text-input id="date_of_submission" name="date_of_submission" type="date" class="block w-full" :value="old('date_of_submission', $monitoring->date_of_submission?->format('Y-m-d'))" />
+                                                        <x-input-error class="mt-2" :messages="$errors->get('date_of_submission')" />
+                                                    </td>
+                                                    <td class="px-4 py-3 align-top text-sm text-gray-900">
+                                                        <x-text-input id="receiving_officer" name="receiving_officer" type="text" class="block w-full" :value="old('receiving_officer', $monitoring->receiving_officer)" />
+                                                        <x-input-error class="mt-2" :messages="$errors->get('receiving_officer')" />
+                                                    </td>
+                                                    <td class="px-4 py-3 align-top text-sm text-gray-900">
+                                                        <x-text-input id="acknowledgement_receipt_reference_number" name="acknowledgement_receipt_reference_number" type="text" class="block w-full" :value="old('acknowledgement_receipt_reference_number', $monitoring->acknowledgement_receipt_reference_number)" />
+                                                        <x-input-error class="mt-2" :messages="$errors->get('acknowledgement_receipt_reference_number')" />
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <x-primary-button>{{ __('Submit Form') }}</x-primary-button>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <div class="mt-6">
+                                <a href="{{ route('bookings.index', ['tab' => 'monitoring']) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back to Monitoring') }}</a>
+                            </div>
                         </div>
                     </form>
 

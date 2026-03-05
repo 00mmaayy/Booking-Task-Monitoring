@@ -159,6 +159,12 @@
                                                 @else
                                                     <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">{{ __('Pending') }}</span>
                                                 @endif
+
+                                                @if (!empty($latestFormNoteUpdatedAtByMonitoring[$monitoring->id] ?? null))
+                                                    <div class="mt-1 text-xs text-gray-500">
+                                                        {{ __('Last updated:') }} {{ $latestFormNoteUpdatedAtByMonitoring[$monitoring->id] }}
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 @php
@@ -176,14 +182,16 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 <div class="flex flex-col items-start gap-2">
                                                     @if ($allRequiredFormsCompleted)
-                                                        <button type="button" class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                        <a href="{{ route('bookings.edit', ['monitoring' => $monitoring, 'show_submission_form' => 1]) }}" class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                                             {{ __('Start Submission Process') }}
-                                                        </button>
+                                                        </a>
                                                     @endif
 
-                                                    <a href="{{ route('bookings.edit', $monitoring) }}" class="inline-flex items-center rounded-md bg-gray-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                                                        {{ $allRequiredFormsCompleted ? __('Review Task') : __('Update') }}
-                                                    </a>
+                                                    @unless ($allRequiredFormsCompleted)
+                                                        <a href="{{ route('bookings.edit', $monitoring) }}" class="inline-flex items-center rounded-md bg-gray-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                                            {{ __('Update') }}
+                                                        </a>
+                                                    @endunless
                                                 </div>
                                             </td>
                                         </tr>

@@ -60,7 +60,19 @@ class BookingController extends Controller
                 $note->task_monitoring_id.'-'.$note->form_id => strtolower((string) $note->note_status),
             ]);
 
-        return view('bookings', compact('clients', 'contactPersons', 'tasks', 'forms', 'monitorings', 'formNamesById', 'formStatusesByMonitoringAndForm'));
+        $latestFormNoteUpdatedAtByMonitoring = TaskMonitoringFormNote::query()
+            ->whereIn('task_monitoring_id', $monitorings->pluck('id'))
+            ->select('task_monitoring_id')
+            ->selectRaw('MAX(updated_at) as latest_updated_at')
+            ->groupBy('task_monitoring_id')
+            ->get()
+            ->mapWithKeys(fn ($item) => [
+                (int) $item->task_monitoring_id => $item->latest_updated_at
+                    ? Carbon::parse($item->latest_updated_at)->format('F d, Y h:i A')
+                    : null,
+            ]);
+
+        return view('bookings', compact('clients', 'contactPersons', 'tasks', 'forms', 'monitorings', 'formNamesById', 'formStatusesByMonitoringAndForm', 'latestFormNoteUpdatedAtByMonitoring'));
     }
 
     /**
@@ -91,7 +103,7 @@ class BookingController extends Controller
     /**
      * Show the form for editing the specified monitoring entry.
      */
-    public function edit(TaskMonitoring $monitoring): View
+    public function edit(Request $request, TaskMonitoring $monitoring): View
     {
         $clients = Client::query()
             ->select(['id', 'client_name'])
@@ -123,9 +135,15 @@ class BookingController extends Controller
                 'notes_remarks' => $note->notes_remarks,
                 'note_date' => $note->note_date ? Carbon::parse($note->note_date)->format('Y-m-d') : null,
                 'note_status' => $note->note_status,
+                'updated_at' => $note->updated_at ? Carbon::parse($note->updated_at)->format('F d, Y h:i A') : null,
             ]);
 
-        return view('task-monitorings.edit', compact('monitoring', 'clients', 'tasks', 'contactPersons', 'forms', 'notesByForm'));
+        $showSubmissionForm = $request->boolean('show_submission_form')
+            || ! empty($monitoring->date_of_submission)
+            || ! empty($monitoring->receiving_officer)
+            || ! empty($monitoring->acknowledgement_receipt_reference_number);
+
+        return view('task-monitorings.edit', compact('monitoring', 'clients', 'tasks', 'contactPersons', 'forms', 'notesByForm', 'showSubmissionForm'));
     }
 
     /**
@@ -140,7 +158,14 @@ class BookingController extends Controller
             'assigned_responsible_person' => ['required', 'integer', 'exists:clients,id'],
             'required_forms_documents' => ['nullable', 'array'],
             'required_forms_documents.*' => ['integer', 'exists:forms,id'],
+            'date_of_submission' => ['nullable', 'date'],
+            'receiving_officer' => ['nullable', 'string', 'max:255'],
+            'acknowledgement_receipt_reference_number' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $hasCompleteSubmissionDetails = ! empty($validated['date_of_submission'])
+            && ! empty(trim((string) ($validated['receiving_officer'] ?? '')))
+            && ! empty(trim((string) ($validated['acknowledgement_receipt_reference_number'] ?? '')));
 
         $monitoring->update([
             'date_task_received' => $validated['date_task_received'],
@@ -148,6 +173,10 @@ class BookingController extends Controller
             'task_id' => $validated['type_of_task'],
             'assigned_responsible_person_id' => $validated['assigned_responsible_person'],
             'required_forms_documents' => $validated['required_forms_documents'] ?? [],
+            'date_of_submission' => $validated['date_of_submission'] ?? null,
+            'receiving_officer' => $validated['receiving_officer'] ?? null,
+            'acknowledgement_receipt_reference_number' => $validated['acknowledgement_receipt_reference_number'] ?? null,
+            'submission_status' => $hasCompleteSubmissionDetails ? 'completed' : 'pending',
         ]);
 
         return Redirect::route('bookings.index', ['tab' => 'monitoring'])->with('status', 'task-updated');

@@ -20,6 +20,9 @@ class TaskMonitoring extends Model
         'assigned_responsible_person_id',
         'required_forms_documents',
         'submission_status',
+        'date_of_submission',
+        'receiving_officer',
+        'acknowledgement_receipt_reference_number',
     ];
 
     /**
@@ -30,6 +33,7 @@ class TaskMonitoring extends Model
         return [
             'date_task_received' => 'date',
             'required_forms_documents' => 'array',
+            'date_of_submission' => 'date',
         ];
     }
 
