@@ -110,11 +110,6 @@
                         </div>
 
                         <div class="md:col-span-2 flex items-center gap-4">
-                            @if ($allRequiredFormsCompleted)
-                                <button type="submit" class="inline-flex items-center rounded-md bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                                    {{ __('Documents Completed') }}
-                                </button>
-                            @endif
                             <a href="{{ route('bookings.index', ['tab' => 'monitoring']) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back to Monitoring') }}</a>
                         </div>
                     </form>

@@ -14,8 +14,8 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased h-screen overflow-hidden">
-        <div class="h-screen overflow-hidden bg-gray-100">
+    <body class="font-sans antialiased bg-gray-100 min-h-screen">
+        <div class="min-h-screen bg-gray-100 flex flex-col">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
@@ -28,7 +28,7 @@
             @endisset
 
             <!-- Page Content -->
-            <main class="h-full overflow-hidden">
+            <main class="flex-1 overflow-y-auto">
                 {{ $slot }}
             </main>
         </div>
