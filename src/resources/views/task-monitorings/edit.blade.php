@@ -260,6 +260,7 @@
                                             <x-input-label for="submission_decision" :value="__('Submission Decision')" />
                                             <select id="submission_decision" name="submission_decision" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                                 <option value="">{{ __('Select Decision') }}</option>
+                                                <option value="pending" @selected((string) $submissionDecisionValue === 'pending')>{{ __('Pending') }}</option>
                                                 <option value="declined" @selected((string) $submissionDecisionValue === 'declined')>{{ __('Declined') }}</option>
                                                 <option value="accepted" @selected((string) $submissionDecisionValue === 'accepted')>{{ __('Accepted') }}</option>
                                             </select>

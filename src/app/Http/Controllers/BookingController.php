@@ -161,7 +161,7 @@ class BookingController extends Controller
             'date_of_submission' => ['nullable', 'date'],
             'receiving_officer' => ['nullable', 'string', 'max:255'],
             'acknowledgement_receipt_reference_number' => ['nullable', 'string', 'max:255'],
-            'submission_decision' => ['nullable', 'string', 'in:declined,accepted'],
+            'submission_decision' => ['nullable', 'string', 'in:pending,declined,accepted'],
             'submission_notes' => ['nullable', 'string'],
             'submission_notes_input' => ['nullable', 'string'],
             'existing_submission_notes' => ['nullable', 'string'],
