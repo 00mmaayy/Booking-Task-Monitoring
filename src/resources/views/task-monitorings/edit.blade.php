@@ -8,7 +8,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900" x-data="{ isNoteModalOpen: false, isSubmissionModalOpen: @js($errors->has('date_of_submission') || $errors->has('receiving_officer') || $errors->has('acknowledgement_receipt_reference_number')), isSubmissionDecisionModalOpen: @js($errors->has('submission_decision') || $errors->has('submission_notes')), selectedFormId: '', selectedFormName: '', noteDate: '', noteStatus: 'pending', existingRemarks: '', notesRemarksInput: '', openNoteModal(button) { this.selectedFormId = button.dataset.formId; this.selectedFormName = button.dataset.formName; this.noteDate = button.dataset.noteDate || '{{ now()->format('Y-m-d') }}'; this.noteStatus = button.dataset.noteStatus || 'pending'; this.existingRemarks = button.dataset.notesRemarks || ''; this.notesRemarksInput = ''; this.isNoteModalOpen = true; }, closeNoteModal() { this.isNoteModalOpen = false; }, openSubmissionModal() { this.isSubmissionModalOpen = true; }, closeSubmissionModal() { this.isSubmissionModalOpen = false; }, openSubmissionDecisionModal() { this.isSubmissionDecisionModalOpen = true; }, closeSubmissionDecisionModal() { this.isSubmissionDecisionModalOpen = false; } }">
+                <div class="p-6 text-gray-900" x-data="{ isNoteModalOpen: false, isSubmissionModalOpen: @js($errors->has('date_of_submission') || $errors->has('receiving_officer') || $errors->has('acknowledgement_receipt_reference_number')), isSubmissionDecisionModalOpen: @js($errors->has('submission_decision') || $errors->has('submission_notes') || $errors->has('submission_notes_input')), selectedFormId: '', selectedFormName: '', noteDate: '', noteStatus: 'pending', existingRemarks: '', notesRemarksInput: '', openNoteModal(button) { this.selectedFormId = button.dataset.formId; this.selectedFormName = button.dataset.formName; this.noteDate = button.dataset.noteDate || '{{ now()->format('Y-m-d') }}'; this.noteStatus = button.dataset.noteStatus || 'pending'; this.existingRemarks = button.dataset.notesRemarks || ''; this.notesRemarksInput = ''; this.isNoteModalOpen = true; }, closeNoteModal() { this.isNoteModalOpen = false; }, openSubmissionModal() { this.isSubmissionModalOpen = true; }, closeSubmissionModal() { this.isSubmissionModalOpen = false; }, openSubmissionDecisionModal() { this.isSubmissionDecisionModalOpen = true; }, closeSubmissionDecisionModal() { this.isSubmissionDecisionModalOpen = false; } }">
                     @if (session('status') === 'form-note-saved')
                         <p class="mb-4 text-sm text-green-600">{{ __('Form note saved successfully.') }}</p>
                     @endif
@@ -73,6 +73,8 @@
                                 $acknowledgementReferenceValue = old('acknowledgement_receipt_reference_number', $monitoring->acknowledgement_receipt_reference_number);
                                 $submissionDecisionValue = old('submission_decision', $monitoring->submission_decision);
                                 $submissionNotesValue = old('submission_notes', $monitoring->submission_notes);
+                                $existingSubmissionNotesValue = old('existing_submission_notes', $monitoring->submission_notes);
+                                $submissionNotesInputValue = old('submission_notes_input', '');
                                 $hasSubmissionEntryDetails = ! empty(trim((string) ($monitoring->submission_decision ?? '')))
                                     || ! empty(trim((string) ($monitoring->submission_notes ?? '')));
                             @endphp
@@ -113,9 +115,11 @@
                                                 </td>
                                                 <td class="px-4 py-2 text-sm text-gray-900 whitespace-pre-line">{{ $note['notes_remarks'] ?? '—' }}</td>
                                                 <td class="px-4 py-2 text-sm text-gray-900">
-                                                    <button type="button" x-on:click="openNoteModal($el)" data-form-id="{{ $form->id }}" data-form-name="{{ $form->form_name }}" data-note-date="{{ $note['note_date'] ?? '' }}" data-note-status="{{ $note['note_status'] ?? 'pending' }}" data-notes-remarks="{{ $note['notes_remarks'] ?? '' }}" class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $isCompleted ? 'bg-green-600 hover:bg-green-500 focus:ring-green-500' : 'bg-gray-800 hover:bg-gray-700 focus:ring-gray-500' }}">
-                                                        {{ __('Update') }}
-                                                    </button>
+                                                    @if (blank($monitoring->receiving_officer))
+                                                        <button type="button" x-on:click="openNoteModal($el)" data-form-id="{{ $form->id }}" data-form-name="{{ $form->form_name }}" data-note-date="{{ $note['note_date'] ?? '' }}" data-note-status="{{ $note['note_status'] ?? 'pending' }}" data-notes-remarks="{{ $note['notes_remarks'] ?? '' }}" class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $isCompleted ? 'bg-green-600 hover:bg-green-500 focus:ring-green-500' : 'bg-gray-800 hover:bg-gray-700 focus:ring-gray-500' }}">
+                                                            {{ __('Update') }}
+                                                        </button>
+                                                    @endif
                                                 </td>
                                             </tr>
                                             <input type="hidden" name="required_forms_documents[]" value="{{ $form->id }}">
@@ -263,9 +267,14 @@
                                         </div>
 
                                         <div>
-                                            <x-input-label for="submission_notes" :value="__('Submission Notes')" />
-                                            <textarea id="submission_notes" name="submission_notes" rows="4" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ $submissionNotesValue }}</textarea>
-                                            <x-input-error class="mt-2" :messages="$errors->get('submission_notes')" />
+                                            <input type="hidden" name="existing_submission_notes" value="{{ $existingSubmissionNotesValue }}">
+
+                                            <x-input-label for="existing_submission_notes_preview" :value="__('Existing Notes/Remarks')" />
+                                            <textarea id="existing_submission_notes_preview" rows="4" class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 text-gray-700 shadow-sm" readonly>{{ $existingSubmissionNotesValue }}</textarea>
+
+                                            <x-input-label class="mt-4" for="submission_notes_input" :value="__('Add Notes/Remarks')" />
+                                            <textarea id="submission_notes_input" name="submission_notes_input" rows="4" class="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ $submissionNotesInputValue }}</textarea>
+                                            <x-input-error class="mt-2" :messages="$errors->get('submission_notes_input')" />
                                         </div>
                                     </div>
 

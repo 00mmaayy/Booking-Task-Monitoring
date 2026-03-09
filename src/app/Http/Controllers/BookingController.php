@@ -163,7 +163,22 @@ class BookingController extends Controller
             'acknowledgement_receipt_reference_number' => ['nullable', 'string', 'max:255'],
             'submission_decision' => ['nullable', 'string', 'in:declined,accepted'],
             'submission_notes' => ['nullable', 'string'],
+            'submission_notes_input' => ['nullable', 'string'],
+            'existing_submission_notes' => ['nullable', 'string'],
         ]);
+
+        $existingSubmissionNotes = trim((string) ($validated['existing_submission_notes'] ?? ($validated['submission_notes'] ?? $monitoring->submission_notes ?? '')));
+        $newSubmissionNote = trim((string) ($validated['submission_notes_input'] ?? ''));
+
+        $combinedSubmissionNotes = $existingSubmissionNotes;
+
+        if ($newSubmissionNote !== '') {
+            $timestampedSubmissionNote = '['.now()->format('F d, Y h:i A').'] '.$newSubmissionNote;
+
+            $combinedSubmissionNotes = $existingSubmissionNotes === ''
+                ? $timestampedSubmissionNote
+                : $existingSubmissionNotes."\n".$timestampedSubmissionNote;
+        }
 
         $monitoring->update([
             'date_task_received' => $validated['date_task_received'],
@@ -175,7 +190,7 @@ class BookingController extends Controller
             'receiving_officer' => $validated['receiving_officer'] ?? null,
             'acknowledgement_receipt_reference_number' => $validated['acknowledgement_receipt_reference_number'] ?? null,
             'submission_decision' => $validated['submission_decision'] ?? null,
-            'submission_notes' => $validated['submission_notes'] ?? null,
+            'submission_notes' => $combinedSubmissionNotes !== '' ? $combinedSubmissionNotes : null,
             'submission_status' => ($validated['submission_decision'] ?? null) === 'accepted' ? 'completed' : 'pending',
         ]);
 
