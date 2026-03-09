@@ -163,11 +163,13 @@
                                         </table>
                                     </div>
 
-                                    <div class="mt-4">
-                                        <button type="button" x-on:click="openSubmissionModal()" class="inline-flex items-center rounded-md bg-gray-800 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                                            {{ __('Edit Submission Details') }}
-                                        </button>
-                                    </div>
+                                    @if (strtolower((string) $monitoring->submission_status) !== 'completed')
+                                        <div class="mt-4">
+                                            <button type="button" x-on:click="openSubmissionModal()" class="inline-flex items-center rounded-md bg-gray-800 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                                {{ __('Edit Submission Details') }}
+                                            </button>
+                                        </div>
+                                    @endif
                                     <br>
                                     <x-input-label :value="__('Submission Action')" />
 

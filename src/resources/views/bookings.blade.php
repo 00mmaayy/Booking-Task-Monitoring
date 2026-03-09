@@ -206,8 +206,8 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 <div class="flex flex-col items-start gap-2">
                                                     @if ($allRequiredFormsCompleted)
-                                                        <a href="{{ route('bookings.edit', ['monitoring' => $monitoring, 'show_submission_form' => 1]) }}" class="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                            {{ __('Submission Process') }}
+                                                        <a href="{{ route('bookings.edit', ['monitoring' => $monitoring, 'show_submission_form' => 1]) }}" class="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 {{ $submissionStatus === 'completed' ? 'bg-green-600 hover:bg-green-500 focus:ring-green-500' : 'bg-blue-600 hover:bg-blue-500 focus:ring-blue-500' }}">
+                                                            {{ $submissionStatus === 'completed' ? __('View Details') : __('Submission Process') }}
                                                         </a>
                                                     @endif
 
